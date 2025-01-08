@@ -144,6 +144,26 @@ const authSlice = createSlice({
                 state.user = null;
                 state.isAuthenticated = false;
                 state.error = action.payload?.message || 'An unexpected error occurred.';
+            })
+            .addCase(checkAuth.pending, (state) => {
+                console.log("Registering user - pending state");  // Log pending action
+                state.isLoading = true;
+                state.error = null;  // Clear previous errors
+            })
+            .addCase(checkAuth.fulfilled, (state, action) => {
+                console.log(action);
+                console.log("Register user - fulfilled state:", action.payload);  // Log success state
+                state.isLoading = false;
+                state.user = action.payload.success ? action.payload.user : null ;
+                state.isAuthenticated = action.payload.success ;
+                state.successMessage = action.payload.message;  // Display success message
+            })
+            .addCase(checkAuth.rejected, (state, action) => {
+                console.log("Login user - rejected state:", action.payload);  // Log error state
+                state.isLoading = false;
+                state.user = null;
+                state.isAuthenticated = false;
+                state.error = action.payload?.message || 'An unexpected error occurred.';
             });
     }
 });
