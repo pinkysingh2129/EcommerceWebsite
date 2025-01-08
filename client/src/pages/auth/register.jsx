@@ -1,29 +1,63 @@
 import CommonForm from '@/components/common/form';
 import { registerFormControls } from '@/config';
+import { useToast } from '@/components/ui/use-toast';
 import { registerUser } from '@/store/auth-slice';
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Link, useNavigate } from 'react-router-dom';
 
 const initialState = {
-    username: '', // ✅ Corrected name to match form controls
-    email: '',    // ✅ Corrected to match form controls
-    password: ''  // ✅ Correct
+    username: '',
+    email: '',
+    password: ''
 };
 
 function AuthRegister() {
     const [formData, setFormData] = useState(initialState);
     const dispatch = useDispatch();
     const navigate = useNavigate();
-
+    const {toast} = useToast();
+    const { isLoading, error, successMessage } = useSelector((state) => state.auth);
 
     function onSubmit(event) {
-        event.preventDefault()
-        dispatch(registerUser(formData)).then((data)=>{
-            console.log(data);
-        });
+        event.preventDefault();
+
+        // Log the form data to verify what you're sending to the backend
+        console.log('Form Data:', formData);
+
+        dispatch(registerUser(formData))
+            .then((data) => {
+                // Log the response data to check the structure and content of the response
+                console.log('Response Data:', data);
+
+                const message = data?.payload?.message || 'Something went wrong';
+
+                // Check if registration was successful
+                if (data?.payload?.success) {
+                    toast({
+                        title: 'Registration Successful',
+                        description: message,
+                        variant: 'success', // Success variant
+                    });
+                    navigate('/auth/login');
+                } else {
+                    toast({
+                        title: 'Registration Failed',
+                        description: message,
+                        variant: 'destructive', // Error variant
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Error occurred during registration:', error);
+                toast({
+                    title: 'An error occurred',
+                    description: 'Please try again later.',
+                    variant: 'destructive', // Error variant for network issues
+                });
+            });
     }
-    console.log(formData);
+
     return (
         <div className="ml-4 w-full max-w-md space-y-6">
             <div className="text-center">
@@ -37,15 +71,23 @@ function AuthRegister() {
                     </Link>
                 </p>
             </div>
+
+            {error && (
+                <div className="text-red-600">
+                    <p>{error}</p>
+                </div>
+            )}
+
             <CommonForm
                 formControls={registerFormControls}
-                buttonText={'Sign Up'}
+                buttonText={isLoading ? 'Signing Up...' : 'Sign Up'}
                 formData={formData}
                 setFormData={setFormData}
-                onSubmit={onSubmit}  
+                onSubmit={onSubmit}
+                disabled={isLoading}
             />
         </div>
     );
 }
 
-export default AuthRegister;
+ export default AuthRegister

@@ -11,22 +11,15 @@ mongoose.connect(process.env.MONGO_URI)
     .catch(error => console.log('Error connecting to MongoDB: ', error));
 
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 
-const allowedOrigins = ['http://localhost:5173', 'http://localhost:5174'];
 
 app.use(
     cors({
-        origin: (origin, callback) => {
-            if (allowedOrigins.includes(origin) || !origin) {
-                callback(null, true);
-            } else {
-                callback(new Error('Not allowed by CORS'));
-            }
-        }, 
-    methods: ['GET', 'POST', 'DELETE', 'PUT'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Expires', 'Pragma'],
-    credentials: true
+        origin: ['http://localhost:5173', 'http://localhost:5174'],
+        methods: ['GET', 'POST', 'DELETE', 'PUT'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Expires', 'Pragma'],
+        credentials: true,
     })
 );
 
@@ -38,6 +31,8 @@ app.listen(PORT, () => console.log(`Server is running on port ${PORT}`));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something went wrong!');
+    console.error('Error stack:', err.stack);
+    const statusCode = err.status || 500;
+    const message = err.message || 'Internal Server Error';
+    res.status(statusCode).json({ success: false, message });
 });
