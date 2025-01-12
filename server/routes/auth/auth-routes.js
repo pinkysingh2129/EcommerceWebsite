@@ -1,6 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const { registerUser , loginUser, logoutUSer, authMiddleware} = require('../../controllers/auth/auth-controller');
+const { registerUser , 
+    loginUser,
+    logoutUSer,
+    authMiddleware } = require('../../controllers/auth/auth-controller');
 
 // Register route
 router.post('/register', registerUser);
@@ -11,8 +14,8 @@ router.get('/checkauth', authMiddleware , (req,res)=>{
     res.status(200).json({
         success : true,
         message : 'Authenticated user!',
-        user,
-    })
+        user, 
+    });
 
 });
 // Login route

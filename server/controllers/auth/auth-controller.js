@@ -19,6 +19,7 @@ const registerUser = async (req, res) => {
             username,
             email,
             password: hashPassword,
+            role: 'admin',
         });
 
         // Save the new user to the database
@@ -56,8 +57,13 @@ const loginUser = async (req, res) => {
             });
         }
         const token = jwt.sign({
-            id: checkUser._id, role : checkUser.role, email : checkUser.email
-        },'CLIENT_SECRET_KEY',{expiresIn : '60m'})
+            id: checkUser._id, 
+            role : checkUser.role,
+            email : checkUser.email,
+        },
+        'CLIENT_SECRET_KEY',
+        {expiresIn : '60m'}
+    );
 
         res.cookie('token' , token,{httpOnly : true , secure : false }).json({
             success: true,
@@ -95,13 +101,17 @@ const authMiddleware = async(req,res,next)=> {
     try {
         const decoded = jwt.verify(token,'CLIENT_SECRET_KEY');
         req.user= decoded;
-        next()
+        next();
     }catch(error){
-        res.json(401).json({
+        return res.status(401).json({
             success : false,
             message : 'unauthorised user!',
         });
     }
 }
-module.exports = { registerUser, loginUser, logoutUSer,authMiddleware};
+
+
+
+module.exports = { registerUser, loginUser, logoutUSer, authMiddleware };
+
 

@@ -1,172 +1,149 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from 'axios';
+import axios from "axios";
 
 const initialState = {
-    isAuthenticated: false,
-    isLoading: false,
-    user: null,
-    error: null,  // For handling error messages
-    successMessage: null,  // For handling success messages
+isAuthenticated: false,
+isLoading: true,
+user: null,
+error: null,
+successMessage: null,
 };
 
-// Updated registerUser Action
+// Helper Function: Handle Errors
+const handleError = (error) => {
+if (error.response) {
+    return { message: error.response.data.message || "An error occurred." };
+}
+return { message: "An unexpected error occurred. Please try again later." };
+};
+
+// Register User Action
 export const registerUser = createAsyncThunk(
-    '/auth/register',
+    "auth/register",
     async (formData, { rejectWithValue }) => {
-        try {
-            console.log('Sending Form Data:', formData);  // Log the data before making the API call
-
-            const response = await axios.post('http://localhost:5000/api/auth/register', formData, {
-                withCredentials: true,
-            });
-
-            console.log('Backend Response:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Error in registerUser:', error);
-
-            // Check for specific error responses from the backend
-            if (error.response && error.response.status === 409) {
-                return rejectWithValue({
-                    message: error.response.data.message || 'A user with this email already exists.',
-                });
-            }
-
-            // For all other errors
-            return rejectWithValue({
-                message: 'An unexpected error occurred. Please try again later.',
-            });
-        }
+    try {
+        console.log("Sending Registration Data:", formData);
+        const response = await axios.post(
+            'http://localhost:5000/api/auth/register', 
+            formData,
+            { withCredentials: true }
+        );
+        console.log("Registration Successful:", response.data);
+        return response.data;
+    } catch (error) {
+        console.error("Error in registerUser:", error);
+        return rejectWithValue(handleError(error));
     }
+}
 );
 
-
+// Login User Action
 export const loginUser = createAsyncThunk(
-    '/auth/login',
+    "auth/login",
     async (formData, { rejectWithValue }) => {
-        try {
-            console.log('Sending Form Data:', formData);  // Log the data before making the API call
-
-            const response = await axios.post('http://localhost:5000/api/auth/login', formData, {
-                withCredentials: true,
-            });
-
-            console.log('Backend Response:', response.data);
-            return response.data;
-        } catch (error) {
-            console.error('Error in registerUser:', error);
-
-            // Check for specific error responses from the backend
-            if (error.response && error.response.status === 409) {
-                return rejectWithValue({
-                    message: error.response.data.message || 'A user with this email already exists.'
-                });
-            }
-
-            // For all other errors
-            return rejectWithValue({
-                message: 'An unexpected error occurred. Please try again later.',
-            });
-        }
+    try {
+        console.log("Sending Login Data:", formData);
+        const response = await axios.post(
+            'http://localhost:5000/api/auth/login',
+            formData, 
+            { withCredentials: true }
+        );
+        console.log("Login Successful:", response.data);
+        return response.data;
+    } catch (error) {
+    console.error("Error in loginUser:", error);
+    return rejectWithValue(handleError(error));
     }
+}
 );
 
-export const checkAuth = createAsyncThunk(
-    '/auth/checkauth',
-    async () => {
-                const response = await axios.get('http://localhost:5000/api/auth/checkauth', {
-                withCredentials: true,
-                headers : {
-                    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
-                
-                },
-            });
-
-        return response.data;        
+// Check Authentication Status Action
+export const checkAuth = createAsyncThunk("auth/checkauth", async (_, { rejectWithValue }) => {
+    try {
+    const response = await axios.get("http://localhost:5000/api/auth/checkauth", {
+        withCredentials: true,
+        headers: {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+        },
+    });
+    console.log("Auth Check Successful:", response.data);
+    return response.data;
+    } catch (error) {
+    console.error("Error in checkAuth:", error);
+    return rejectWithValue(handleError(error));
+    }
 });
 
 const authSlice = createSlice({
-    name: 'auth',
-    initialState,
-    reducers: {
-        setUser: (state, action) => {
-            console.log("Setting user in Redux state:", action.payload);  // Log user being set
-            state.user = action.payload;
-            state.isAuthenticated = true;
-        },
-        clearError: (state) => {
-            console.log("Clearing error in Redux state");
-            state.error = null;
-        },
-        clearSuccess: (state) => {
-            console.log("Clearing success message in Redux state");
-            state.successMessage = null;
-        }
+name: "auth",
+initialState,
+reducers: {
+    setUser: (state, action) => {
+    state.user = action.payload;
+    state.isAuthenticated = true;
     },
-    extraReducers: (builder) => {
-        builder
-            .addCase(registerUser.pending, (state) => {
-                console.log("Registering user - pending state");  // Log pending action
-                state.isLoading = true;
-                state.error = null;  // Clear previous errors
-            })
-            .addCase(registerUser.fulfilled, (state, action) => {
-                console.log("Register user - fulfilled state:", action.payload);  // Log success state
-                state.isLoading = false;
-                state.user = null;
-                state.isAuthenticated = false;
-                state.successMessage = action.payload.message;  // Display success message
-            })
-            .addCase(registerUser.rejected, (state, action) => {
-                console.log("Register user - rejected state:", action.payload);  // Log error state
-                state.isLoading = false;
-                state.user = null;
-                state.isAuthenticated = false;
-                state.error = action.payload?.message || 'An unexpected error occurred.';
-            })
-            .addCase(loginUser.pending, (state) => {
-                console.log("Registering user - pending state");  // Log pending action
-                state.isLoading = true;
-                state.error = null;  // Clear previous errors
-            })
-            .addCase(loginUser.fulfilled, (state, action) => {
-                console.log(action);
-                console.log("Register user - fulfilled state:", action.payload);  // Log success state
-                state.isLoading = false;
-                state.user = action.payload.success ? action.payload.user : null ;
-                state.isAuthenticated = action.payload.success ;
-                state.successMessage = action.payload.message;  // Display success message
-            })
-            .addCase(loginUser.rejected, (state, action) => {
-    
-                console.log("Login user - rejected state:", action.payload);  // Log error state
-                state.isLoading = false;
-                state.user = null;
-                state.isAuthenticated = false;
-                state.error = action.payload?.message || 'An unexpected error occurred.';
-            })
-            .addCase(checkAuth.pending, (state) => {
-                console.log("Registering user - pending state");  // Log pending action
-                state.isLoading = true;
-                state.error = null;  // Clear previous errors
-            })
-            .addCase(checkAuth.fulfilled, (state, action) => {
-                console.log(action);
-                console.log("Register user - fulfilled state:", action.payload);  // Log success state
-                state.isLoading = false;
-                state.user = action.payload.success ? action.payload.user : null ;
-                state.isAuthenticated = action.payload.success ;
-                state.successMessage = action.payload.message;  // Display success message
-            })
-            .addCase(checkAuth.rejected, (state, action) => {
-                console.log("Login user - rejected state:", action.payload);  // Log error state
-                state.isLoading = false;
-                state.user = null;
-                state.isAuthenticated = false;
-                state.error = action.payload?.message || 'An unexpected error occurred.';
-            });
-    }
+    clearError: (state) => {
+    state.error = null;
+    },
+    clearSuccess: (state) => {
+    state.successMessage = null;
+    },
+},
+extraReducers: (builder) => {
+    builder
+      // Register User
+    .addCase(registerUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+    })
+    .addCase(registerUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.successMessage = action.payload.message || "Registration successful!";
+        state.error = null;
+    })
+    .addCase(registerUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload.message || "Failed to register.";
+    })
+
+      // Login User
+    .addCase(loginUser.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+    })
+    .addCase(loginUser.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.success ?  action.payload.user :null;
+        state.isAuthenticated = action.payload.success || false;
+        state.successMessage = action.payload.message || "Login successful!";
+        console.log("User role after login:", state.user?.role);
+    })
+    .addCase(loginUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = action.payload.message || "Failed to log in.";
+    })
+
+      // Check Auth
+    .addCase(checkAuth.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+    })
+    .addCase(checkAuth.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.user = action.payload.success ? action.payload.user : null;
+        state.isAuthenticated = action.payload.success || false;
+    })
+    .addCase(checkAuth.rejected, (state, action) => {
+        state.isLoading = false;
+        state.user = null;
+        state.isAuthenticated = false;
+        state.error = action.payload.message || "Failed to check authentication.";
+    });
+},
 });
 
 export const { setUser, clearError, clearSuccess } = authSlice.actions;
-export default authSlice.reducer  ;
+
+export default authSlice.reducer;
